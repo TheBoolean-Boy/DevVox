@@ -48,7 +48,7 @@ const dashboard = () => {
     </div>
 
     <div className=' mt-8'>
-      commitlog
+      commitlogg
     </div>
 
     </div>
