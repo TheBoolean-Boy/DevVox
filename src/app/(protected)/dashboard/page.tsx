@@ -2,6 +2,7 @@
 import useProject from '@/hooks/use-project'
 import { ExternalLink, Github } from 'lucide-react'
 import Link from 'next/link'
+import CommitLog from './commit-log'
 
 const dashboard = () => {
   const { project } = useProject()
@@ -48,7 +49,7 @@ const dashboard = () => {
     </div>
 
     <div className=' mt-8'>
-      commitlogg
+      <CommitLog />
     </div>
 
     </div>
