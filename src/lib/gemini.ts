@@ -7,7 +7,8 @@ const genAI = new GoogleGenAI({
 export const aiSummariseCommit = async (diff: string) => {
   const response = await genAI.models.generateContent({
     model: 'gemini-2.5-flash',
-    contents: ` You are an expert programmer, and you are trying to summarize a git diff.
+    contents: 
+    ` You are an expert programmer, and you are trying to summarize a git diff.
                 Reminders about the git diff format:
                 For every file, there are a few metadata lines, like (for example):
                 \`\`\`
