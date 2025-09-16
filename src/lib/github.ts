@@ -55,6 +55,28 @@ export const pollCommits = async (projectId: string) => {
   }))
 
   // So here actually summaryResponses 
+  const summaries = summaryReponses.map( (response) => {
+    if(response.status === 'fulfilled'){
+      return response.value as string
+    }
+
+    return ""
+  })
+
+  const commits = await db.commit.createMany({
+    data: summaries.map( (summary, index) => {
+      console.log("Processing Commits ->  ", index);
+      return {
+        projectId: projectId,
+        commitHash: unprocessedCommits[index]?.commitHash  ?? "",
+        commitMessage: unprocessedCommits[index]?.commitMessage ?? "",
+        commitAuthorName: unprocessedCommits[index]?.commitAuthorName ?? "",
+        commitAuthorAvatar: unprocessedCommits[index]?.commitAuthorAvatar ?? "",
+        commitDate: unprocessedCommits[index]?.commitDate ?? "",
+        summary
+      }
+    })
+  })
   return unprocessedCommits;
 }
 
@@ -64,8 +86,6 @@ async function summariseCommit(githubUrl:string, commitHash: string) {
       Accept: 'application/vnd.github.v3.diff'
     }
   })
-
-  console.log(typeof data)
 
   return await aiSummariseCommit(data) || "Couldn't get summarises for commits"
 }
@@ -96,5 +116,3 @@ async function filterUnprocessedCommits(projectId:string, commitHashes: Response
 
   return unprocessedCommits
 }
-
-await pollCommits('cmfkzaqaq0000kliwvmgpso4g')
