@@ -49,7 +49,7 @@ export const aiSummariseCommit = async (diff: string) => {
 }
 
 export async function summariseCode(doc: Document) {
-  console.log(`getting summaries for: ${doc.metadata.source}`)
+  // console.log(`getting summaries for: ${doc.metadata.source}`)
   try {
     const code = doc.pageContent.slice(0, 10000)
     const response = await genAI.models.generateContent({

@@ -13,7 +13,7 @@ const google = createGoogleGenerativeAI({
 export async function askQuestion(question: string, projectId?: string) {
   const stream = createStreamableValue()
 
-  console.log("A QUESTION WAS ASKED")
+  // console.log("A QUESTION WAS ASKED")
 
   const embeddings = await generateEmbedding(question)
   if (!embeddings || embeddings.length === 0) {
@@ -22,12 +22,12 @@ export async function askQuestion(question: string, projectId?: string) {
   }
   const queryVector = embeddings[0]?.values
   // console.log(JSON.stringify(queryVector, null, 2))
-  console.log("Here is the question embedding ->  ", queryVector)
+  // console.log("Here is the question embedding ->  ", queryVector)
 
 
 
   const vectorQuery = `[${queryVector?.join(',')}]`
-  console.log("Here is the Vector Query we got from queryVector  ->  ", vectorQuery) 
+  // console.log("Here is the Vector Query we got from queryVector  ->  ", vectorQuery) 
 
 
   const result = await db.$queryRaw`
@@ -40,13 +40,13 @@ export async function askQuestion(question: string, projectId?: string) {
   LIMIT 10
 ` as { fileName: string; sourceCode: string; summary: string }[]
 
-  console.log("here are relevant file ->  ", JSON.stringify(result, null, 2))
+  // console.log("here are relevant file ->  ", JSON.stringify(result, null, 2))
 
   let context = ''
 
   for (const doc of result) {
     context += `source: ${doc.fileName} \n code content: ${doc.sourceCode} \n summary of file: ${doc.summary}\n\n`
-    console.log("Forging the context now ")
+    // console.log("Forging the context now ")
   }
 
   (async () => {
@@ -78,7 +78,7 @@ export async function askQuestion(question: string, projectId?: string) {
 
     for await (const delta of textStream) {
       stream.update(delta)
-      console.log("Updating text to stream ")
+      // console.log("Updating text to stream ")
     }
 
     stream.done()
@@ -86,7 +86,6 @@ export async function askQuestion(question: string, projectId?: string) {
 
 
   return {
-    print: console.log("Output -> ", stream.value, "  Files referefn are ->  ", result),
     output: stream.value,
     fileReferences: result
   }
