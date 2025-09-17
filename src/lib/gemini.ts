@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { Document } from "@langchain/core/documents";
 
 const genAI = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY
@@ -7,8 +8,8 @@ const genAI = new GoogleGenAI({
 export const aiSummariseCommit = async (diff: string) => {
   const response = await genAI.models.generateContent({
     model: 'gemini-2.5-flash',
-    contents: 
-    ` You are an expert programmer, and you are trying to summarize a git diff.
+    contents:
+      ` You are an expert programmer, and you are trying to summarize a git diff.
                 Reminders about the git diff format:
                 For every file, there are a few metadata lines, like (for example):
                 \`\`\`
@@ -46,6 +47,39 @@ export const aiSummariseCommit = async (diff: string) => {
   })
   return response.text
 }
+
+export async function summariseCode(doc: Document) {
+  console.log(`getting summaries for: ${doc.metadata.source}`)
+  try {
+    const code = doc.pageContent.slice(0, 10000)
+    const response = await genAI.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `You are an intelligent senior software engineer who specialises in onboarding junior software engineers onto projects You are onboarding a junior software engineer and explaining to them the purpose of the ${doc.metadata.source} file
+    Here is the code:
+    ${code}
+
+    Give a summary no more than 100 words of the code above,`
+    })
+    return response.text 
+  } catch (error) {
+    return ''
+  }
+}
+
+export async function generateEmbedding(summary: string) {
+  const respose = await genAI.models.embedContent({
+    model: 'gemini-embedding-001',
+    contents: `${summary}`,
+    config: {
+      outputDimensionality: 768
+    }
+  })
+  // console.log( "inside Gemini.ts", typeof respose.embeddings)
+  return respose.embeddings
+}
+
+// console.log("Inside Gemini Ts ", await generateEmbedding("Wahtsaoo"))
+// console.log(await generateEmbedding("Hellow"))
 
 
 
