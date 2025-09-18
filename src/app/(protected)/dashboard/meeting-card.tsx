@@ -17,7 +17,6 @@ const MeetingCard = () => {
     multiple: false,
     maxSize: 50_000_000,
     onDrop: async (acceptedFiles) => {
-      console.log("inside ondrop files receuived by dropzone")
       setIsUploading(true)
       console.log(acceptedFiles)
       const file = acceptedFiles[0]

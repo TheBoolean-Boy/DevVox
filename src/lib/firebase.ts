@@ -20,15 +20,12 @@ const app = initializeApp(firebaseConfig);
 export const storage = getStorage(app)
 
 export async function uploadFile(file:File, setProgress?: (progress: number) => void) {
-  console.log("Some file received")
   return new Promise( (resolve, reject )=> {
     try {
       const storageRef = ref(storage, file.name)
-      console.log("storage reference ->  ", storageRef)
       const uploadTask = uploadBytesResumable(storageRef, file)
 
       uploadTask.on('state_changed', snapshot => {
-        console.log("Inside upload task")
         const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100)
         if(setProgress) setProgress(progress)
         switch(snapshot.state){
