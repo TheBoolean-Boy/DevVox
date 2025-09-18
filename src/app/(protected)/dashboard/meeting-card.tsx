@@ -1,5 +1,5 @@
 "use client"
-import {buildStyles, CircularProgressbar} from 'react-circular-progressbar'
+import { buildStyles, CircularProgressbar } from 'react-circular-progressbar'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { uploadFile } from '@/lib/firebase'
@@ -10,14 +10,26 @@ import useProject from '@/hooks/use-project'
 import { api } from '@/trpc/react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { useMutation } from '@tanstack/react-query'
+import axios from 'axios'
 // import { useRouter } from 'next/router'
 
 const MeetingCard = () => {
-  const {project} = useProject();
+  const { project } = useProject();
+
+  const processMeeting = useMutation({
+    mutationFn: async ( data: { meetingUrl:string, meetingId:string, projectId:string }) => {
+      const { meetingUrl, meetingId, projectId } = data;
+      const response = await axios.post('/api/process-meeting', { meetingUrl, meetingId, projectId });
+      return response.data;
+    },
+  });
+
   const [isUploading, setIsUploading] = React.useState(false)
   const [progress, setProgress] = React.useState(0)
   const router = useRouter()
   const uploadMeetig = api.project.uploadMeeting.useMutation()
+
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
       'audio/*': ['.mp3', '.wav', '.m4a']
@@ -29,15 +41,16 @@ const MeetingCard = () => {
       console.log(acceptedFiles)
       const file = acceptedFiles[0]
       const downloadUrl = await uploadFile(file as File, setProgress) as string
-      if(!file)toast.warning("Please upload an audio file!")
+      if (!file) toast.warning("Please upload an audio file!")
       uploadMeetig.mutate({
         projectId: project!.id,
         meetingUrl: downloadUrl,
         name: file!.name
       }, {
-        onSuccess:() => {
+        onSuccess: (meeting) => {
           toast.success("Meeting uploaded successfully")
           router.push("/meetings")
+          processMeeting.mutateAsync({meetingUrl: downloadUrl, meetingId: meeting.id, projectId:project!.id})
         },
         onError: () => {
           toast.error("Failed to process your file")
@@ -77,7 +90,7 @@ const MeetingCard = () => {
               pathColor: `#333333`,
               textColor: `#333333`
             })
-          }/>
+          } />
           <p className=' text-sm text-gray-500 text-center'>Uploading....</p>
         </div>
       )}

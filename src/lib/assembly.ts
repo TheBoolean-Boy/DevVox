@@ -12,3 +12,27 @@ function msToTime(ms: number) {
   return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
+export const processMeetings = async(meetingUrl: string) =>{
+  const transcript = await client.transcripts.transcribe({
+    audio: meetingUrl,
+    auto_chapters: true
+  })
+
+  
+  const summaries =  transcript.chapters?.map(chapter => ({
+    start: msToTime(chapter.start),
+    end: msToTime(chapter.end),
+    gist: chapter.gist,
+    headline: chapter.headline,
+    summary: chapter.summary
+  })) || []
+  
+  if(!transcript.text) throw new Error("No Transcirpt Found")
+
+  return {
+    summaries
+  }
+}
+
+
+

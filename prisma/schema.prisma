@@ -44,6 +44,7 @@ model Project{
 
     savedQuestions Questions[]
     meetings Meeting[]
+    issues Issue[]
 
 }
 
@@ -101,6 +102,9 @@ model Issue{
 
     meetingId String
     meeting Meeting @relation(fields: [meetingId], references: [id])
+
+    projectId String
+    project Project @relation(fields: [projectId], references: [id])
 }
 
 enum MeetingStatus{
