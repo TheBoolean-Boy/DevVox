@@ -6,6 +6,7 @@ import CommitLog from './commit-log'
 import AskQuestionCard from './ask-question-card'
 import MeetingCard from './meeting-card'
 import { Button } from '@/components/ui/button'
+import ArchiveButton from './archive-button'
 
 const dashboard = () => {
   const { project } = useProject()
@@ -37,7 +38,7 @@ const dashboard = () => {
         {/* TeamMembers */}
         {/* InviteButton */}
         {/* <Button variant={'outline'}> <Plus/> Invite teammates</Button> */}
-        {/* ArchiveButton */}
+        <ArchiveButton />
       </div>
       
     </div>

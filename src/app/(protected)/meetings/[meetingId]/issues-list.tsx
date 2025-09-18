@@ -98,7 +98,7 @@ function IssueCard({ issue }: Issue) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={() => setOpen(true)}>
+          <Button onClick={() => setOpen(true)} className='hover:scale-105 cursor-pointer'>
             Details
           </Button>
         </CardContent>
