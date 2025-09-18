@@ -6,10 +6,18 @@ import { uploadFile } from '@/lib/firebase'
 import { Presentation, Upload } from 'lucide-react'
 import React from 'react'
 import { useDropzone } from 'react-dropzone'
+import useProject from '@/hooks/use-project'
+import { api } from '@/trpc/react'
+import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
+// import { useRouter } from 'next/router'
 
 const MeetingCard = () => {
+  const {project} = useProject();
   const [isUploading, setIsUploading] = React.useState(false)
   const [progress, setProgress] = React.useState(0)
+  const router = useRouter()
+  const uploadMeetig = api.project.uploadMeeting.useMutation()
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
       'audio/*': ['.mp3', '.wav', '.m4a']
@@ -20,7 +28,21 @@ const MeetingCard = () => {
       setIsUploading(true)
       console.log(acceptedFiles)
       const file = acceptedFiles[0]
-      const downloadUrl = await uploadFile(file as File, setProgress)
+      const downloadUrl = await uploadFile(file as File, setProgress) as string
+      if(!file)toast.warning("Please upload an audio file!")
+      uploadMeetig.mutate({
+        projectId: project!.id,
+        meetingUrl: downloadUrl,
+        name: file!.name
+      }, {
+        onSuccess:() => {
+          toast.success("Meeting uploaded successfully")
+          router.push("/meetings")
+        },
+        onError: () => {
+          toast.error("Failed to process your file")
+        }
+      })
       window.alert(downloadUrl)
       setIsUploading(false)
     }
@@ -34,14 +56,14 @@ const MeetingCard = () => {
             Create a new meeting
           </h3>
           <p className="mt-0 text-center text-sm text-gray-500">
-            Analyse your meeting with Dionysus.
+            Analyse your meeting and transcribe issues directly from them with DevVox AI.
             <br />
-            Powered by AI.
+            Max Audio file size limit: 50Mb
           </p>
           <div className="mt-3">
             <Button disabled={isUploading}>
               <Upload className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
-              Upload Meeting
+              Upload Meeting Audio
               <input className="hidden" {...getInputProps()} />
             </Button>
           </div>
