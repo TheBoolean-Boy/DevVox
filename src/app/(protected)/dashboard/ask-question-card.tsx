@@ -11,8 +11,8 @@ import React, { useState } from 'react'
 import { askQuestion } from './action'
 import { readStreamableValue } from '@ai-sdk/rsc'
 import CodeReferences from './code-references'
-// import { materialDark, atomDark, holiTheme} from 'react-syntax-highlighter/dist/esm/styles/prism'
-
+import { api } from '@/trpc/react'
+import { toast } from 'sonner'
 
 const AskQuestionCard = () => {
   const { project } = useProject()
@@ -21,6 +21,25 @@ const AskQuestionCard = () => {
   const [loading, setLoading] = React.useState(false)
   const [fileReferences, setFileReferences] = React.useState<{ fileName: string, sourceCode: string, summary: string }[]>([])
   const [answer, setAnswer] = React.useState('')
+  const saveAnswer = api.project.saveAnswer.useMutation()
+
+  const onSaveAnswer = async () => {
+    saveAnswer.mutate({
+      projectId: project!.id,
+      question,
+      answer,
+      fileReferences
+    }, 
+    {
+      onSuccess: () => {
+        toast.success("Answer saved successfully")
+      },
+      onError: () => {
+        toast.error("Couldn't save the answer")
+      }
+    })
+  }
+
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     setAnswer('')
     setFileReferences([])
@@ -32,32 +51,56 @@ const AskQuestionCard = () => {
     setOpen(true)
     setFileReferences(fileReferences)
 
-
     for await (const delta of readStreamableValue(output)) {
       if (delta) {
         setAnswer(ans => ans + delta)
       }
     }
+    setLoading(false)
   }
+
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className=' sm:max-w-[70vw]'>
+        <DialogContent className='sm:max-w-[95vw] max-h-[90vh] flex flex-col'>
           <DialogHeader>
-            <DialogTitle>
-              <Image src='/logo.png' alt='DevVox' width={40} height={40} />
-            </DialogTitle>
+            <div className='flex items-center gap-2 justify-between'>
+              <DialogTitle className='flex items-center gap-2'>
+                <Image src='/logo.png' alt='DevVox' width={40} height={40} />
+                <span>DevVox Answer</span>
+              </DialogTitle>
+              <div className='flex gap-2'>
+                <Button disabled={saveAnswer.isPending} variant={'outline'} onClick={onSaveAnswer}>
+                  Save Answer
+                </Button>
+                <Button type='button' variant={'outline'} onClick={() => setOpen(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
           </DialogHeader>
+          
+          <div className='flex gap-4 flex-1 min-h-0'>
+            <div className='flex-1 flex flex-col min-w-0'>
+              <h3 className='text-lg font-semibold mb-2 text-gray-700'>Answer to your query</h3>
+              <div className='flex-1 border rounded-lg overflow-hidden'>
+                <MDEditor.Markdown 
+                  source={answer || 'Waiting for response...'} 
+                  className='px-4 py-3 h-full overflow-auto rounded-lg' 
+                  data-color-mode="light" 
+                />
+              </div>
+            </div>
 
-          <MDEditor.Markdown source={answer} className=' px-4 py-3 max-w-[70vw] !h-full max-h-[40vh] overflow-scroll rounded-2xl ' data-color-mode="light" />
-
-          <div className=' h-4'></div>
-          <CodeReferences filesReferences={fileReferences}/>
-          <Button type='button' onClick={() => { setOpen(false) }}>
-            Close
-          </Button>
-
-
+            {fileReferences.length > 0 && (
+              <div className='flex-1 flex flex-col min-w-0'>
+                <h3 className='text-lg font-semibold mb-2 text-gray-700'>Files referred from Codebase</h3>
+                <div className='flex-1 min-h-0'>
+                  <CodeReferences filesReferences={fileReferences} />
+                </div>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -74,12 +117,11 @@ const AskQuestionCard = () => {
             />
             <div className='h-4'></div>
             <Button type='submit' disabled={loading}>
-              Ask DevVox!
+              {loading ? 'Processing...' : 'Ask DevVox!'}
             </Button>
           </form>
         </CardContent>
       </Card>
-
     </>
   )
 }
