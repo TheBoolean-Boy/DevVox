@@ -1,9 +1,11 @@
 "use client"
 import useProject from '@/hooks/use-project'
-import { ExternalLink, Github } from 'lucide-react'
+import { ExternalLink, Github, Plus } from 'lucide-react'
 import Link from 'next/link'
 import CommitLog from './commit-log'
 import AskQuestionCard from './ask-question-card'
+import MeetingCard from './meeting-card'
+import { Button } from '@/components/ui/button'
 
 const dashboard = () => {
   const { project } = useProject()
@@ -32,9 +34,10 @@ const dashboard = () => {
       <div className=' h-4'></div>
 
       <div className='flex items-center gap-4'>
-        TeamMembers
-        InviteButton
-        ArchiveButton
+        {/* TeamMembers */}
+        {/* InviteButton */}
+        {/* <Button variant={'outline'}> <Plus/> Invite teammates</Button> */}
+        {/* ArchiveButton */}
       </div>
       
     </div>
@@ -43,7 +46,7 @@ const dashboard = () => {
 
       <div className=' grid grid-cols-1 gap-4 sm:grid-cols-5'>
         <AskQuestionCard />
-        Meeting Card
+        <MeetingCard />
       </div>
 
 
