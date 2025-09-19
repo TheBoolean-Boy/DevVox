@@ -90,8 +90,7 @@ const CreatePage = () => {
             )}
 
             <Button disabled={createProject.isPending || checkCredits.isPending || !hasEnoughCredits} type='submit' className=' hover:bg-black hover:scale-105 hover:font-bold cursor-pointer mt-3'>
-              {/* { !!checkCredits.data ? 'Create Project' || 'Check Credits'}
-               */}
+              { !!checkCredits.data ? 'Create Project' : 'Check Credits'}
               Create Project
             </Button>
           </form>
