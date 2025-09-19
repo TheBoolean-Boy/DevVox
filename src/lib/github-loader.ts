@@ -4,54 +4,62 @@ import { summariseCode, generateEmbedding } from './gemini'
 import { db } from '@/server/db'
 import { Octokit } from 'octokit'
 
-
-const getFileCount = async (path: string, octokit: Octokit, githubOwner: string, githubRepo: string, acc: number = 0) => {
-  const { data } = await octokit.rest.repos.getContent({
+const getFileCount = async (
+  octokit: Octokit,
+  githubOwner: string,
+  githubRepo: string,
+  branch: string = "main"
+): Promise<number> => {
+  const { data: branchData } = await octokit.rest.repos.getBranch({
     owner: githubOwner,
     repo: githubRepo,
-    path
-  })
+    branch
+  });
 
-  if (!Array.isArray(data) && data.type === 'file') {
-    return acc + 1
+  const treeSha = branchData.commit.commit.tree.sha;
+
+  const { data: treeData } = await octokit.rest.git.getTree({
+    owner: githubOwner,
+    repo: githubRepo,
+    tree_sha: treeSha,
+    recursive: "true"
+  });
+
+  if (treeData.truncated) {
+    throw new Error("Repo tree too large, consider downloading the archive.");
   }
 
-  if (Array.isArray(data)) {
-    let fileCount = 0
-    const directories: string[] = []
+  return treeData.tree.filter(item => item.type === "blob").length;
+};
 
-    for (const item of data) {
-      if (item.type === 'dir') {
-        directories.push(item.path)
-      } else {
-        fileCount++
-      }
-    }
 
-    if (directories.length > 0) {
-      const directoryCounts = await Promise.all(
-        directories.map(dirPath => getFileCount(dirPath, octokit, githubOwner, githubRepo, 0))
-      )
-      fileCount += directoryCounts.reduce((acc, count) => acc + count, 0)
-    }
-    return acc + fileCount
-  }
-  return acc
-}
 
-export const checkCredits = async (githubUrl: string, githubToken?: string) => {
-  // find out how many files are in the repo
-  const octokit = new Octokit({ auth: githubToken })
-  const githubOwner = githubUrl.split('/')[3]
-  const githubRepo = githubUrl.split('/')[4]
+
+export const checkCredits = async (
+  githubUrl: string,
+  githubToken?: string
+): Promise<number> => {
+  // Initialize Octokit with token (personal access token recommended)
+  const octokit = new Octokit({
+    auth: githubToken || process.env.GITHUB_TOKEN
+  });
+
+  // Parse GitHub URL to extract owner and repo
+  // Works for URLs like https://github.com/owner/repo or with trailing slash
+  const parts = githubUrl.split("/");
+  const githubOwner = parts[3];
+  const githubRepo = parts[4];
 
   if (!githubOwner || !githubRepo) {
-    return 0
+    return 0; // invalid URL
   }
 
-  const fileCount = await getFileCount('', octokit, githubOwner, githubRepo, 0)
-  return fileCount
-}
+  // Use the tree API version (avoids hitting rate limits)
+  const fileCount = await getFileCount(octokit, githubOwner, githubRepo);
+
+  return fileCount;
+};
+
 
 
 export const loadGithubRepo = async (githubUrl: string, githubToken?: string) => {

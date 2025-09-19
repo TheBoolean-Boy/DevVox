@@ -56,7 +56,6 @@ const MeetingCard = () => {
           toast.error("Failed to process your file")
         }
       })
-      window.alert(downloadUrl)
       setIsUploading(false)
     }
   })
