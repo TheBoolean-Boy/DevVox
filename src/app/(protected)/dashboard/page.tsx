@@ -7,6 +7,8 @@ import AskQuestionCard from './ask-question-card'
 import MeetingCard from './meeting-card'
 import { Button } from '@/components/ui/button'
 import ArchiveButton from './archive-button'
+import InviteButton from './invite-button'
+import TeamMembers from './team-members'
 
 const dashboard = () => {
   const { project } = useProject()
@@ -21,7 +23,7 @@ const dashboard = () => {
         <div className="flex items-center">
           <Github className="size-5 text-white" />
           <h3 className="text-sm font-medium ml-2 text-white">
-            This project is linked to {'  '}
+            This project is linked to {'  '} 
           </h3>
           <Link href={project?.githubUrl ?? " "}>
             <div className="inline-flex items-center text-white/80 hover:underline">
@@ -35,9 +37,8 @@ const dashboard = () => {
       <div className=' h-4'></div>
 
       <div className='flex items-center gap-4'>
-        {/* TeamMembers */}
-        {/* InviteButton */}
-        {/* <Button variant={'outline'}> <Plus/> Invite teammates</Button> */}
+        <TeamMembers />
+        <InviteButton />
         <ArchiveButton />
       </div>
       
