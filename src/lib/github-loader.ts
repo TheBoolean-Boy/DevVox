@@ -8,7 +8,7 @@ const getFileCount = async (
   octokit: Octokit,
   githubOwner: string,
   githubRepo: string,
-  branch: string = "main"
+  branch: string = 'main'
 ): Promise<number> => {
   const { data: branchData } = await octokit.rest.repos.getBranch({
     owner: githubOwner,
@@ -22,31 +22,25 @@ const getFileCount = async (
     owner: githubOwner,
     repo: githubRepo,
     tree_sha: treeSha,
-    recursive: "true"
+    recursive: 'true'
   });
 
   if (treeData.truncated) {
-    throw new Error("Repo tree too large, consider downloading the archive.");
+    throw new Error('Repo tree too large, consider downloading the archive.');
   }
 
-  return treeData.tree.filter(item => item.type === "blob").length;
+  return treeData.tree.filter(item => item.type === 'blob').length;
 };
-
-
-
 
 export const checkCredits = async (
   githubUrl: string,
   githubToken?: string
 ): Promise<number> => {
-  // Initialize Octokit with token (personal access token recommended)
   const octokit = new Octokit({
     auth: githubToken || process.env.GITHUB_TOKEN
   });
 
-  // Parse GitHub URL to extract owner and repo
-  // Works for URLs like https://github.com/owner/repo or with trailing slash
-  const parts = githubUrl.split("/");
+  const parts = githubUrl.split('/');
   const githubOwner = parts[3];
   const githubRepo = parts[4];
 
@@ -54,13 +48,10 @@ export const checkCredits = async (
     return 0; // invalid URL
   }
 
-  // Use the tree API version (avoids hitting rate limits)
   const fileCount = await getFileCount(octokit, githubOwner, githubRepo);
 
   return fileCount;
 };
-
-
 
 export const loadGithubRepo = async (githubUrl: string, githubToken?: string) => {
   const loader = new GithubRepoLoader(githubUrl, {
@@ -70,64 +61,49 @@ export const loadGithubRepo = async (githubUrl: string, githubToken?: string) =>
     recursive: true,
     unknown: 'warn',
     maxConcurrency: 5
-  })
-  const docs = await loader.load()
-  return docs
-}
-
-// console.log(await loadGithubRepo('https://github.com/TheBoolean-Boy/AuthBuzz'))
+  });
+  const docs = await loader.load();
+  return docs;
+};
 
 export const indexGithubRepo = async (projectId: string, githubUrl: string, githubToken?: string) => {
-  const docs = await loadGithubRepo(githubUrl, githubToken)
-  const allEmbeddings = await generateEmbeddings(docs)
+  const docs = await loadGithubRepo(githubUrl, githubToken);
+  const allEmbeddings = await generateEmbeddings(docs);
 
   await Promise.allSettled(allEmbeddings.map(async (embedding, index) => {
-    console.log(`processing ${index} of ${allEmbeddings.length}`)
-    if (!embedding) return
+    console.log(`processing ${index} of ${allEmbeddings.length}`);
+    if (!embedding) return;
 
     const sourceCodeEmbedding = await db.sourceCodeEmbeddings.create({
       data: {
-        // summaryEmbedding: embedding.embedding,
         sourceCode: embedding.sourceCode,
-        summary: embedding.summary ?? "",
+        summary: embedding.summary ?? '',
         fileName: embedding.fileName,
         projectId
       }
-    })
+    });
 
-    // console.log("Inside gitloader.st", embedding.embedding?.values)
-    // const vector = embedding.embedding?.values
-    // const vector = `[${embedding.embedding?.values.join(',')}]`
     const embeddings = embedding.embedding;
-
     if (!embeddings || embeddings.length === 0) {
-      return
+      return;
     }
 
-    const VectorEmbedding = embeddings[0]?.values;
+    const VectorEmbedding = embeddings[0].values;
+    const vector = `[${VectorEmbedding.join(',')}];`;
 
-    const vector = `[${VectorEmbedding?.join(",")}]`;
-
-    console.log("THIS IS ONE OF THE VECTOR THAT WILL BE PUSHED TO THE DATABASE ->   ", vector);
-
-    await db.$executeRaw`
-    UPDATE "SourceCodeEmbeddings"F
-    SET "summaryEmbedding" = ${vector}::vector
-    WHERE "id" = ${sourceCodeEmbedding.id}
-    `
-
-  }))
-}
+    await db.$executeRaw`UPDATE "SourceCodeEmbeddings" SET "summaryEmbedding" = ${vector}::vector WHERE "id" = ${sourceCodeEmbedding.id}`;
+  }));
+};
 
 const generateEmbeddings = async (docs: Document[]) => {
   return await Promise.all(docs.map(async (doc) => {
-    const summary = await summariseCode(doc)
-    const embedding = await generateEmbedding(summary!)
+    const summary = await summariseCode(doc);
+    const embedding = await generateEmbedding(summary!);
     return {
       summary,
       embedding,
       sourceCode: JSON.parse(JSON.stringify(doc.pageContent)),
       fileName: doc.metadata.source
-    }
-  }))
-}
+    };
+  }));
+};
